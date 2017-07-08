@@ -4,18 +4,31 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Lib where
 
-import           Data.Either
+import           Control.Exception
+import           Control.Monad
 import           Data.List
 import           Data.List.Utils
+import           Data.Time.Clock.POSIX
 import           Data.Yaml
 import           GHC.Generics
+import           Prelude               hiding (catch)
 import           System.Directory
-import  System.Posix.Files
+import           System.IO.Error       hiding (catch)
+import           System.Posix.Files
+import           Text.Printf
 
-import qualified Data.Text        as T
+import qualified Data.Text             as T
 
-data ParseError a = ConfettiYamlNotFound | GroupNotFound a | ConfettiYamlInvalid a deriving (Show, Generic)
-data ApplyError a = VariantsMissing [a] deriving (Show) -- TODO
+data ParseError a = ConfettiYamlNotFound | GroupNotFound a | ConfettiYamlInvalid a deriving (Generic)
+
+instance (Show a) => Show (ParseError a) where
+  show (ConfettiYamlInvalid a) = "There was an issue parsing your ~/.confetti.yml: " ++ show a
+  show (GroupNotFound a) = printf "No match for group %s found in your ~/.confetti.yml: " (show a)
+  show ConfettiYamlNotFound = "No confetti spec file found! See https://github.com/aviaviavi/confetti if you need help setting one up"
+
+newtype ApplyError a = VariantsMissing [a]
+instance (Show a) => Show (ApplyError a)  where
+  show (VariantsMissing a) = "Couldn't find one or more of your variant files to use: " ++ show a
 
 type ConfigVariant = String
 type ConfigTarget = String
@@ -23,6 +36,7 @@ data ConfigGroup = ConfigGroup
   { name    :: T.Text
   , targets :: [FilePath]
   } deriving (Show, Generic)
+
 
 newtype ParsedSpecFile = ParsedSpecFile
   { groups :: [ConfigGroup]
@@ -39,68 +53,75 @@ data ConfigSpec = ConfigSpec
   }
 
 parseGroup:: FilePath -> T.Text -> IO (Either (ParseError T.Text) ConfigGroup)
-parseGroup specFile groupName = doesFileExist specFile >>= \exists ->
-  helper specFile groupName exists where
+parseGroup specFile groupName =
+  doesFileExist specFile >>= \exists -> helper specFile groupName exists
+  where
     helper specFile groupName exists
       | not exists = return $ Left ConfettiYamlNotFound
       | otherwise = do
-          eitherParsed <- decodeFileEither specFile
-          return $ either (Left . ConfettiYamlInvalid . T.pack . prettyPrintParseException) (\p -> findGroup p groupName) eitherParsed
+        eitherParsed <- decodeFileEither specFile
+        return $
+          either
+            (Left . ConfettiYamlInvalid . T.pack . prettyPrintParseException)
+            (\p -> findGroup p groupName)
+            eitherParsed
 
 findGroup :: ParsedSpecFile -> T.Text -> Either (ParseError T.Text) ConfigGroup
 findGroup spec groupName =
-  maybe
-    (Left $ GroupNotFound groupName)
-    Right
-    $ find (\g -> name g == groupName) (groups spec)
+  maybe (Left $ GroupNotFound groupName) Right $
+  find (\g -> name g == groupName) (groups spec)
 
 backUpIfNonSymLink :: FilePath -> IO ()
 backUpIfNonSymLink file = do
   exists <- doesFileExist file
-  isLink <- pathIsSymbolicLink  file
-  if exists && not isLink then
-    createBackup file
-  else
-    return ()
+  isLink <- if exists then pathIsSymbolicLink file else return False
+  when (exists && not isLink) $ createBackup file
 
 createBackup :: FilePath -> IO ()
-createBackup file = error "not implemented"
+createBackup file =
+  let newName =
+        (round <$> getPOSIXTime) >>=
+        (\t -> return $ file ++ "." ++ show t ++ ".backup")
+  in newName >>= \backup -> copyFile file backup
 
-deleteTarget :: FilePath -> IO ()
-deleteTarget file = doesFileExist file >>= \exists ->
-  if exists then
-    removeFile file
-  else
-    return ()
+removeIfExists fileName = removeFile fileName `catch` handleExists
+  where handleExists e
+          | isDoesNotExistError e = return ()
+          | otherwise = throwIO e
 
-allVariantsExists :: ConfigVariant -> [ConfigTarget] -> IO Bool
-allVariantsExists variant targets =
-  let variantPaths = constructFullVariantPaths variant targets in do
-    putStrLn $ "variants len: " ++ (show $ length variantPaths)
-    mapM_ putStrLn variantPaths
-    mapM doesFileExist variantPaths >>= \s ->
-      return $ all (== True) s
+filterMissingVariants :: [ConfigVariant] -> IO [FilePath]
+filterMissingVariants paths = filterM (fmap not . doesFileExist) paths
 
 linkTargets :: ConfigVariant -> [ConfigTarget] -> IO ()
 linkTargets variant targets =
-  let variantPaths = constructFullVariantPaths variant targets in do
-    mapM_ (\pair -> createSymbolicLink (fst pair) (snd pair :: FilePath)) (zip variantPaths targets)
+  let variantPaths = constructFullVariantPaths variant targets
+  in mapM_
+    (\pair -> createSymbolicLink (fst pair) (snd pair :: FilePath))
+    (zip variantPaths targets)
 
 
 constructFullVariantPaths :: ConfigVariant -> [ConfigTarget] -> [FilePath]
 constructFullVariantPaths variant targets =
-  map (\t -> (join "/" $ init (split "/" t)) ++ "/" ++ variant ++ "." ++ (last $ split "/" t)) targets
+  map
+    (\t ->
+       (Data.List.Utils.join "/" $ init (split "/" t)) ++
+       "/" ++ variant ++ "." ++ (last $ split "/" t))
+    targets
 
 applySpec :: ConfigSpec -> IO (Maybe (ApplyError T.Text))
 applySpec spec = do
   let groupTargets = targets $ configGroup spec
-  return $ map backUpIfNonSymLink groupTargets
-  return $ map deleteTarget groupTargets
-  variantsExist <- allVariantsExists (variant spec) groupTargets
-  if variantsExist then do
-    putStrLn "all variants found, applying..."
-    linkTargets (variant spec) groupTargets
-    return Nothing
-  else do
-    putStrLn "missing variants"
-    return $ Just (VariantsMissing ["files"])
+      variantPaths = constructFullVariantPaths (variant spec) groupTargets
+  mapM_ backUpIfNonSymLink groupTargets
+  mapM_ removeIfExists groupTargets
+  missingVariants <- filterMissingVariants variantPaths
+  if null missingVariants
+    then do
+      mapM_ (\p -> printSuccess $ fst p ++ " -> " ++ snd p) (zip groupTargets variantPaths)
+      linkTargets (variant spec) groupTargets
+      return Nothing
+    else
+      return $ Just (VariantsMissing (map T.pack missingVariants))
+
+printSuccess s = putStrLn $ "\x1b[32m" ++  s
+printFail s = putStrLn $ "\x1b[31m" ++  s

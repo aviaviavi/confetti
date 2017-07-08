@@ -26,19 +26,21 @@ source-repository head
 
 library
   default-language:  Haskell2010
-  --ghc-options:       -Wall -Werror -O2
+  ghc-options:       -O2
   hs-source-dirs:    src
   exposed-modules:   Lib
   build-depends:     base >= 4.8 && < 5
-                   , directory >= 1.3.1.1
+                   , directory
                    , text
                    , text >= 1.2.2.1
                    , unix
                    , MissingH
+                   , time
                    , yaml
 
-executable confetti-exe
+executable confetti
   default-language:  Haskell2010
+  ghc-options:       -O2
   --ghc-options:       -Wall -Werror -O2 -threaded -rtsopts -with-rtsopts=-N
   hs-source-dirs:    app
   main-is:           Main.hs
