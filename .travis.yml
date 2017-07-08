@@ -15,8 +15,8 @@ addons:
 env:
 - ARGS=""
 #- ARGS="--resolver lts-2"
-- ARGS="--resolver lts"
-- ARGS="--resolver nightly"
+#- ARGS="--resolver lts"
+#- ARGS="--resolver nightly"
 
 before_install:
 # Download and unpack the stack executable
