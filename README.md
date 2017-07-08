@@ -1,6 +1,8 @@
 Confetti
 ==========
 
+[![Build Status](https://travis-ci.org/aviaviavi/confetti.svg?branch=master)](https://travis-ci.org/aviaviavi/confetti)
+
 Confetti is a tiny tool for managing different versions of a particular
 configuration file, and quickly swapping them.<br />
 
