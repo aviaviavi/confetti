@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<title>README.html</title>
+
+</head>
+
+<body>
+
+<h1>Confetti</h1>
+
+<p>Confetti is a tiny tool for managing different versions of a particular
+configuration file, and quickly swapping them.<br /></p>
+
+<p>```
+$ ls ~/.aws</p>
+
+<p>credentials (the credential file we're using at any given time)
+work.credentials (credential file for work)
+my.credentials (credentials for my personal aws account)
+```</p>
+
+<p>With a small amount of yaml based configuration, we could swap out credentials like so:</p>
+
+<p><code>$ confetti aws work</code></p>
+
+<p>And credentials would be a symlink to work.credentials.</p>
+
+<p>You can also link multiple different config targets together to have groups of config files that can all be swapped with a single command. </p>
+
+<p>Confetti will read it's configuration from <code>~/.confetti.yml</code>. You can even manage your <code>.confetti.yml</code> files using <code>confetti</code>!</p>
+
+</body>
+</html>

@@ -1,0 +1,4 @@
+groups:
+  - name: aws
+    targets:
+      - /Users/avipress/.aws/credentials
