@@ -37,4 +37,16 @@ This will symlink `~/.aws/credentials` -> `~/.aws/work.credentials`. If the targ
 _not_ a symlink when you invoke confetti, a backup will be made before your variant file is 
 linked. If you have multiple target files in your group, they will all be symlinked to the variant.
 
+## Installing
+
+### MacOs
+
+You can install with brew via:
+```
+$ brew tap aviaviavi/homebrew-tap
+$ brew install aviaviavi/homebrew-tap confetti
+```
+
+You can install from source with [stack](https://docs.haskellstack.org/en/stable/README/).
+
 
