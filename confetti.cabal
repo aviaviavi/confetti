@@ -1,15 +1,13 @@
 name:                confetti
-version:             0.1.0.0
--- synopsis:
--- description:
+version:             0.0.1
+description:         A simple config file swapping tool
 
-license:             ISC
---license-file:        LICENSE
-author:              TODO:<Author name here>
-maintainer:          TODO:<example@example.com>
-copyright:           © 2017 TODO:<Author name here>
-homepage:            https://github.com/TODO:<githubuser>/confetti
-bug-reports:         https://github.com/TODO:<githubuser>/confetti/issues
+license:             MIT
+license-file:        LICENSE
+author:              Avi Press
+maintainer:          avipress@gmail.com
+homepage:            https://github.com/aviaviavi/confetti
+bug-reports:         https://github.com/aviaviavi/confetti/issues
 
 category:            Test
 build-type:          Simple
@@ -22,7 +20,7 @@ extra-source-files:
 
 source-repository head
   type:     git
-  location: https://github.com/TODO:<githubuser>/confetti
+  location: https://github.com/aviaviavi/confetti
 
 library
   default-language:  Haskell2010
@@ -41,7 +39,6 @@ library
 executable confetti
   default-language:  Haskell2010
   ghc-options:       -O2
-  --ghc-options:       -Wall -Werror -O2 -threaded -rtsopts -with-rtsopts=-N
   hs-source-dirs:    app
   main-is:           Main.hs
   build-depends:     base >= 4.8 && < 5
@@ -52,7 +49,6 @@ executable confetti
 test-suite confetti-test
   type:              exitcode-stdio-1.0
   default-language:  Haskell2010
-  --ghc-options:       -Wall -Werror -O2 -threaded -rtsopts -with-rtsopts=-N
   hs-source-dirs:    test
   main-is:           Main.hs
   build-depends:     base >= 4.8 && < 5
