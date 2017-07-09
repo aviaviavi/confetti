@@ -39,7 +39,7 @@ linked. If you have multiple target files in your group, they will all be symlin
 
 ## Installing
 
-### MacOs
+### MacOS
 
 You can install with brew via:
 ```
