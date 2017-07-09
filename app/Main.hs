@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import           Lib
-import           System.Directory
 import           System.Environment
 import           System.Exit
 import           Text.Printf
@@ -30,6 +29,7 @@ main = do
   group <- parseGroup specPath (T.pack $ groupName parsed)
   either (printFail . show) (runSpec (variantName parsed)) group
 
+runSpec :: ConfigVariant -> ConfigGroup -> IO ()
 runSpec variant group =
   applySpec (ConfigSpec group variant) >>= \maybeError ->
     maybe (printSuccess "Success (ﾉ◕ヮ◕)ﾉ*:･ﾟ✧") (printFail . show) maybeError

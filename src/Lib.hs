@@ -2,6 +2,7 @@
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+
 module Lib where
 
 import           Control.Exception
@@ -10,11 +11,9 @@ import           Data.List
 import           Data.List.Utils
 import           Data.Time.Clock.POSIX
 import           Data.Yaml
-import Data.String.Utils
 import           GHC.Generics
-import           Prelude               hiding (catch)
 import           System.Directory
-import           System.IO.Error       hiding (catch)
+import           System.IO.Error
 import           System.Posix.Files
 import           Text.Printf
 
@@ -49,21 +48,21 @@ instance FromJSON ConfigGroup
 instance FromJSON ParsedSpecFile
 
 data ConfigSpec = ConfigSpec
-  { configGroup :: ConfigGroup
-  , variant     :: ConfigVariant
+  { configGroup   :: ConfigGroup
+  , configVariant :: ConfigVariant
   }
 
 parseGroup:: FilePath -> T.Text -> IO (Either (ParseError T.Text) ConfigGroup)
 parseGroup specFile groupName =
-  doesFileExist specFile >>= \exists -> helper specFile groupName exists
+  doesFileExist specFile >>= \exists -> parseGroup' exists
   where
-    helper specFile groupName exists
+    parseGroup' exists
       | not exists = return $ Left ConfettiYamlNotFound
       | otherwise = do
         eitherParsed <- decodeFileEither specFile
         either
           (return . Left . ConfettiYamlInvalid . T.pack . prettyPrintParseException)
-          (\p -> findGroup p groupName)
+          (`findGroup` groupName)
           eitherParsed
 
 findGroup :: ParsedSpecFile -> T.Text -> IO  (Either (ParseError T.Text) ConfigGroup)
@@ -71,9 +70,10 @@ findGroup spec groupName =
   sequence $ maybe (Left $ GroupNotFound groupName) (Right . expandPathsForGroup) $
   find (\g -> name g == groupName) (groups spec)
 
-expandPathsForGroup group =
-  mapM absolutePath (targets group) >>= \expanded ->
-    return $ group { targets = expanded }
+expandPathsForGroup :: ConfigGroup -> IO ConfigGroup
+expandPathsForGroup confGroup =
+  mapM absolutePath (targets confGroup) >>= \expanded ->
+    return $ confGroup {targets = expanded}
 
 backUpIfNonSymLink :: FilePath -> IO ()
 backUpIfNonSymLink file = do
@@ -88,34 +88,34 @@ createBackup file =
         (\t -> return $ file ++ "." ++ show t ++ ".backup")
   in newName >>= \backup -> copyFile file backup
 
+removeIfExists  :: FilePath -> IO ()
 removeIfExists fileName = removeFile fileName `catch` handleExists
   where handleExists e
           | isDoesNotExistError e = return ()
           | otherwise = throwIO e
 
 filterMissingVariants :: [ConfigVariant] -> IO [FilePath]
-filterMissingVariants paths = filterM (fmap not . doesFileExist) paths
+filterMissingVariants = filterM (fmap not . doesFileExist)
 
 linkTargets :: ConfigVariant -> [ConfigTarget] -> IO ()
-linkTargets variant targets =
-  let variantPaths = constructFullVariantPaths variant targets
+linkTargets variant confTargets =
+  let variantPaths = constructFullVariantPaths variant confTargets
   in mapM_
     (\pair -> createSymbolicLink (fst pair) (snd pair :: FilePath))
-    (zip variantPaths targets)
+    (zip variantPaths confTargets)
 
 
 constructFullVariantPaths :: ConfigVariant -> [ConfigTarget] -> [FilePath]
-constructFullVariantPaths variant targets =
+constructFullVariantPaths variant =
   map
     (\t ->
-       (Data.List.Utils.join "/" $ init (split "/" t)) ++
-       "/" ++ variant ++ "." ++ (last $ split "/" t))
-    targets
+       Data.List.Utils.join "/" (init (split "/" t)) ++
+       "/" ++ variant ++ "." ++ last (split "/" t))
 
 applySpec :: ConfigSpec -> IO (Maybe (ApplyError T.Text))
 applySpec spec = do
   let groupTargets = targets $ configGroup spec
-      variantPaths = constructFullVariantPaths (variant spec) groupTargets
+      variantPaths = constructFullVariantPaths (configVariant spec) groupTargets
   mapM_ backUpIfNonSymLink groupTargets
   mapM_ removeIfExists groupTargets
   missingVariants <- filterMissingVariants variantPaths
@@ -124,7 +124,7 @@ applySpec spec = do
       mapM_
         (\p -> printSuccess $ fst p ++ " -> " ++ snd p)
         (zip groupTargets variantPaths)
-      linkTargets (variant spec) groupTargets
+      linkTargets (configVariant spec) groupTargets
       return Nothing
     else return $ Just (VariantsMissing (map T.pack missingVariants))
 
@@ -133,5 +133,8 @@ absolutePath path = do
   home <- getHomeDirectory
   return $ replace "~" home path
 
+printSuccess :: String -> IO ()
 printSuccess s = putStrLn $ "\x1b[32m" ++  s
+
+printFail :: String -> IO ()
 printFail s = putStrLn $ "\x1b[31m" ++  s
