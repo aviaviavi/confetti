@@ -48,6 +48,12 @@ $ brew tap aviaviavi/homebrew-tap
 $ brew install aviaviavi/homebrew-tap/confetti
 ```
 
+### Linux 
+
+A linux binary can be found on the releases page.
+
+### Source (Cross Platform)
+
 You can install from source with [stack](https://docs.haskellstack.org/en/stable/README/).
 
 ## Contributing
