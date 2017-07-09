@@ -32,13 +32,19 @@ newtype ApplyError a = VariantsMissing [a]
 instance (Show a) => Show (ApplyError a)  where
   show (VariantsMissing a) = "Couldn't find one or more of your variant files to use: " ++ show a
 
+-- A config file version we want to swap in or out
 type ConfigVariant = String
+
+-- The actual config file in question.
 type ConfigTarget = String
+
+-- A set of configuration targets
 data ConfigGroup = ConfigGroup
   { name    :: T.Text
   , targets :: [FilePath]
   } deriving (Show, Generic)
 
+-- A valid .confetti.yml gets parsed into this structure
 newtype ParsedSpecFile = ParsedSpecFile
   { groups :: [ConfigGroup]
   } deriving (Show, Generic)
@@ -48,6 +54,9 @@ instance ToJSON ParsedSpecFile
 instance FromJSON ConfigGroup
 instance FromJSON ParsedSpecFile
 
+-- A full config specification:
+-- a group of files, and a variant to swap in for
+-- every target in the group
 data ConfigSpec = ConfigSpec
   { configGroup   :: ConfigGroup
   , configVariant :: ConfigVariant
@@ -97,7 +106,7 @@ createBackup file =
         (\t -> return $ file ++ "." ++ show t ++ ".backup")
   in newName >>= \backup -> copyFile file backup
 
-removeIfExists  :: FilePath -> IO ()
+removeIfExists :: FilePath -> IO ()
 removeIfExists fileName = removeFile fileName `catch` handleExists
   where handleExists e
           | isDoesNotExistError e = return ()
