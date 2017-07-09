@@ -6,20 +6,38 @@ Confetti
 Confetti is a tiny tool for managing different versions of a particular
 configuration file, and quickly swapping them.<br />
 
+Confetti is set up via a spec file, `~/.confetti.yml`. 
+You can specify one or more `groups`, each with a `name`,
+and one or more `targets`, which are the config files you wish to manage. 
+
+Suppose we have multiple AWS credential files we want to easily swap between (ie use different `~/.aws/credential`).
+To use confetti for this task, we'll put our different files in the target directory, `~/.aws`, 
+named `~/.aws/${variant-name}.credentials`. We might have:
+
 ```
-$ ls ~/.aws
-
-credentials (the credential file we're using at any given time)
-work.credentials (credential file for work)
-my.credentials (credentials for my personal aws account)
+~/.aws/personal.credentials
+~/.aws/work.credentials
+~/.aws/org_name.credentials
 ```
 
-With a small amount of yaml based configuration, we could swap out credentials like so:
+A simple example group specification in `~/confetti.yml` might look like:
+```
+groups:
+  - name: aws
+    targets:
+      - /home/you/.aws/credentials
+```
 
-`$ confetti aws work`
+To switch to `work.credientials` simply run: 
+```$ confetti $group_name $variant_name```
+eg.
+```$ confetti aws work```
 
-And credentials would be a symlink to work.credentials.
+This will symlink `~/.aws/credentials` -> `~/.aws/work.credentials`<br />
 
-You can also link multiple different config targets together to have groups of config files that can all be swapped with a single command. 
+If the target file is _not_ a symlink when you invoke confetti, a backup will be made 
+before your variant file is linked.
 
-Confetti will read it's configuration from `~/.confetti.yml`. You can even manage your `.confetti.yml` files using `confetti`!
+If you have multiple target files in your group, they will all be symlinked to the variant.
+
+

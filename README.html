@@ -13,26 +13,44 @@
 
 <h1>Confetti</h1>
 
+<p><a href="https://travis-ci.org/aviaviavi/confetti"><img src="https://travis-ci.org/aviaviavi/confetti.svg?branch=master" alt="Build Status" title="" /></a></p>
+
 <p>Confetti is a tiny tool for managing different versions of a particular
 configuration file, and quickly swapping them.<br /></p>
 
-<p>```
-$ ls ~/.aws</p>
+<p>Confetti is set up via a spec file, <code>~/.confetti.yml</code>. 
+You can specify one or more <code>groups</code>, each with a <code>name</code>,
+and one or more <code>targets</code>, which are the config files you wish to manage. </p>
 
-<p>credentials (the credential file we're using at any given time)
-work.credentials (credential file for work)
-my.credentials (credentials for my personal aws account)
-```</p>
+<p>Suppose we have multiple AWS credential files we want to easily swap between (ie use different <code>~/.aws/credential</code>).
+To use confetti for this task, we'll put our different files in the target directory, <code>~/.aws</code>, 
+named <code>~/.aws/${variant-name}.credentials</code>. We might have:</p>
 
-<p>With a small amount of yaml based configuration, we could swap out credentials like so:</p>
+<p><code>
+~/.aws/personal.credentials
+~/.aws/work.credentials
+~/.aws/org_name.credentials
+</code></p>
 
-<p><code>$ confetti aws work</code></p>
+<p>A simple example group specification in <code>~/confetti.yml</code> might look like:
+<code>
+groups:
+  - name: aws
+    targets:
+      - /home/you/.aws/credentials
+</code></p>
 
-<p>And credentials would be a symlink to work.credentials.</p>
+<p>To switch to <code>work.credientials</code> simply run: 
+<code>$ confetti $group_name $variant_name</code>
+eg.
+<code>$ confetti aws work</code></p>
 
-<p>You can also link multiple different config targets together to have groups of config files that can all be swapped with a single command. </p>
+<p>This will symlink <code>~/.aws/credentials</code> -> <code>~/.aws/work.credentials</code><br /></p>
 
-<p>Confetti will read it's configuration from <code>~/.confetti.yml</code>. You can even manage your <code>.confetti.yml</code> files using <code>confetti</code>!</p>
+<p>If the target file is <em>not</em> a symlink when you invoke confetti, a backup will be made 
+before your variant file is linked.</p>
+
+<p>If you have multiple target files in your group, they will all be symlinked to the variant.</p>
 
 </body>
 </html>
