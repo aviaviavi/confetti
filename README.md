@@ -7,10 +7,11 @@ Confetti is a tiny tool for managing different versions of a particular
 configuration file, and quickly swapping them.<br />
 
 Confetti is set up via a spec file, `~/.confetti.yml`. 
-You can specify one or more `groups`, each with a `name`,
-and one or more `targets`, which are the config files you wish to manage. 
+You can specify one or more `groups`, each with one or more `targets`, 
+which are the config files you wish to manage. 
 
-Suppose we have multiple AWS credential files we want to easily swap between (ie use different `~/.aws/credential`).
+Suppose we have multiple AWS credential files we want to easily switch between (ie use various `~/.aws/credentials`
+variants).
 To use confetti for this task, we'll put our different files in the target directory, `~/.aws`, 
 named `~/.aws/${variant-name}.credentials`. We might have:
 
