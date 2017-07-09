@@ -49,4 +49,6 @@ $ brew install aviaviavi/homebrew-tap/confetti
 
 You can install from source with [stack](https://docs.haskellstack.org/en/stable/README/).
 
+## Contributing
 
+Contributions are welcome! Please submit PR's or open up issues for discussion.
