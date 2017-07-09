@@ -44,7 +44,7 @@ linked. If you have multiple target files in your group, they will all be symlin
 You can install with brew via:
 ```
 $ brew tap aviaviavi/homebrew-tap
-$ brew install aviaviavi/homebrew-tap confetti
+$ brew install aviaviavi/homebrew-tap/confetti
 ```
 
 You can install from source with [stack](https://docs.haskellstack.org/en/stable/README/).
