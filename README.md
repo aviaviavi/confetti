@@ -35,7 +35,8 @@ eg.
 
 This will symlink `~/.aws/credentials` -> `~/.aws/work.credentials`. If the target file is 
 _not_ a symlink when you invoke confetti, a backup will be made before your variant file is 
-linked. If you have multiple target files in your group, they will all be symlinked to the variant.
+linked. If you have multiple target files in your group, they will all be symlinked to their
+respective variants.
 
 ## Installing
 
