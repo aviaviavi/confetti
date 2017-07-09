@@ -10,6 +10,7 @@ import           Data.List
 import           Data.List.Utils
 import           Data.Time.Clock.POSIX
 import           Data.Yaml
+import Data.String.Utils
 import           GHC.Generics
 import           Prelude               hiding (catch)
 import           System.Directory
@@ -60,16 +61,19 @@ parseGroup specFile groupName =
       | not exists = return $ Left ConfettiYamlNotFound
       | otherwise = do
         eitherParsed <- decodeFileEither specFile
-        return $
-          either
-            (Left . ConfettiYamlInvalid . T.pack . prettyPrintParseException)
-            (\p -> findGroup p groupName)
-            eitherParsed
+        either
+          (return . Left . ConfettiYamlInvalid . T.pack . prettyPrintParseException)
+          (\p -> findGroup p groupName)
+          eitherParsed
 
-findGroup :: ParsedSpecFile -> T.Text -> Either (ParseError T.Text) ConfigGroup
+findGroup :: ParsedSpecFile -> T.Text -> IO  (Either (ParseError T.Text) ConfigGroup)
 findGroup spec groupName =
-  maybe (Left $ GroupNotFound groupName) Right $
+  sequence $ maybe (Left $ GroupNotFound groupName) (Right . expandPathsForGroup) $
   find (\g -> name g == groupName) (groups spec)
+
+expandPathsForGroup group =
+  mapM absolutePath (targets group) >>= \expanded ->
+    return $ group { targets = expanded }
 
 backUpIfNonSymLink :: FilePath -> IO ()
 backUpIfNonSymLink file = do
@@ -117,11 +121,17 @@ applySpec spec = do
   missingVariants <- filterMissingVariants variantPaths
   if null missingVariants
     then do
-      mapM_ (\p -> printSuccess $ fst p ++ " -> " ++ snd p) (zip groupTargets variantPaths)
+      mapM_
+        (\p -> printSuccess $ fst p ++ " -> " ++ snd p)
+        (zip groupTargets variantPaths)
       linkTargets (variant spec) groupTargets
       return Nothing
-    else
-      return $ Just (VariantsMissing (map T.pack missingVariants))
+    else return $ Just (VariantsMissing (map T.pack missingVariants))
+
+absolutePath :: FilePath -> IO FilePath
+absolutePath path = do
+  home <- getHomeDirectory
+  return $ replace "~" home path
 
 printSuccess s = putStrLn $ "\x1b[32m" ++  s
 printFail s = putStrLn $ "\x1b[31m" ++  s

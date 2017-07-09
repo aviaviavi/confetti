@@ -45,6 +45,7 @@ executable confetti
   hs-source-dirs:    app
   main-is:           Main.hs
   build-depends:     base >= 4.8 && < 5
+                   , directory
                    , confetti
                    , text >= 1.2.2.1
 

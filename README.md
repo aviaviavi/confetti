@@ -11,8 +11,7 @@ You can specify one or more `groups`, each with one or more `targets`,
 which are the config files you wish to manage. 
 
 Suppose we have multiple AWS credential files we want to easily switch between (ie use various `~/.aws/credentials`
-variants).
-To use confetti for this task, we'll put our different files in the target directory, `~/.aws`, 
+variants). To use confetti for this task, we'll put our different files in the target directory, `~/.aws`, 
 named `~/.aws/${variant-name}.credentials`. We might have:
 
 ```
@@ -34,11 +33,8 @@ To switch to `work.credientials` simply run:
 eg.
 ```$ confetti aws work```
 
-This will symlink `~/.aws/credentials` -> `~/.aws/work.credentials`<br />
-
-If the target file is _not_ a symlink when you invoke confetti, a backup will be made 
-before your variant file is linked.
-
-If you have multiple target files in your group, they will all be symlinked to the variant.
+This will symlink `~/.aws/credentials` -> `~/.aws/work.credentials`. If the target file is 
+_not_ a symlink when you invoke confetti, a backup will be made before your variant file is 
+linked. If you have multiple target files in your group, they will all be symlinked to the variant.
 
 
