@@ -59,3 +59,7 @@ You can install from source with [stack](https://docs.haskellstack.org/en/stable
 ## Contributing
 
 Contributions are welcome! Please submit PR's or open up issues for discussion.
+
+## Future Features
+
+* Config groups should be able to source bash files or sets of environment variables.
