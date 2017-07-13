@@ -28,7 +28,7 @@ groups:
       - /home/you/.aws/credentials
 ```
 
-To switch to `work.credientials` simply run: 
+To switch to `work.credentials` simply run: 
 ```$ confetti $group_name $variant_name```
 eg.
 ```$ confetti aws work```
