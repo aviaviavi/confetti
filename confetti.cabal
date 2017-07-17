@@ -36,7 +36,6 @@ library
                    , time
                    , yaml
                    , filepath
-                   , process
 
 executable confetti
   default-language:  Haskell2010

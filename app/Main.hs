@@ -11,20 +11,16 @@ import qualified Data.Text          as T
 
 -- Structure for our command line arguments
 data MainArgs = MainArgs
-  { groupName   :: String
+  { groupName     :: String
   , variantPrefix :: ConfigVariantPrefix
   } deriving (Show)
 
 -- Parse our command line arguments for a confetti command,
 -- or display some information and exit
 parseMainArgs :: [String] -> IO MainArgs
-parseMainArgs [g, v] =
-  case v of
-    "-n" -> return (MainArgs g Nothing)
-    "--no-variant" -> return (MainArgs g Nothing)
-    _ -> return (MainArgs g $ Just v)
+parseMainArgs [g, v] = return (MainArgs g $ Just v)
 parseMainArgs a =
-  let usage = "Usage: `confetti $group_name $variant_prefix`"
+  let usage = "Usage: `confetti [required group_name] [optional variant_prefix]`"
       showHelp = (putStrLn usage >> exitSuccess)
       confettiVersion = putStrLn ("confetti " ++ showVersion version) >> exitSuccess
   in case a of
@@ -32,6 +28,7 @@ parseMainArgs a =
        ["--help"]    -> showHelp
        ["-v"]        -> confettiVersion
        ["--version"] -> confettiVersion
+       [g]           -> return (MainArgs g Nothing)
        _             -> printFail usage >> exitWith (ExitFailure 1)
 
 main :: IO ()

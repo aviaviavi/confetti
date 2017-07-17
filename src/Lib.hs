@@ -1,8 +1,5 @@
 {-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE GADTs               #-}
 {-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-
 
 module Lib where
 
@@ -266,7 +263,6 @@ applySpec spec = do
          (searchPaths $ configGroup spec))
   mapM_ backUpIfNonSymLink groupTargets
   mapM_ removeIfExists groupTargets
-  print searchResults
   let confirmedVariantFiles = filter (isJust . result) searchResults
       foundFiles = uniq $ map (takeFileName . fromJust . result) confirmedVariantFiles
       allFiles = uniq $ map fileName searchResults
