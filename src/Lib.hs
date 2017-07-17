@@ -232,34 +232,25 @@ findVariantInPath :: ConfigVariantPrefix
 findVariantInPath prefix target searchPath =
   let fileToFind = makeVariant prefix target
   in do pathName <- absolutePath $ path searchPath
-        if fromMaybe False $ recursive searchPath
-          then do
-            searchResult <-
-              find (\f -> endswith fileToFind f && (target /= f)) <$>
-              getRecursiveContents pathName
-            return
-              VariantSearch
-              { searchDirectory = path searchPath
-              , fileName = fileToFind
-              , recursiveSearch = True
-              , result = searchResult
-              , linkToCreate = target
-              }
-          else do
-            let potentialVariant = pathName </> fileToFind
-            exists <- doesFileExist potentialVariant
-            return
-              VariantSearch
-              { searchDirectory = path searchPath
-              , fileName = fileToFind
-              , recursiveSearch = False
-              , linkToCreate = target
-              , result =
-                  if exists && potentialVariant /= target
-                    then Just potentialVariant
-                    else Nothing
-              }
-
+        let isRecursive = fromMaybe False $ recursive searchPath
+        searchResult <-
+          if isRecursive
+            then find (\f -> endswith fileToFind f && (target /= f)) <$>
+                 getRecursiveContents pathName
+            else do
+              let potentialVariant = pathName </> fileToFind
+              exists <- doesFileExist potentialVariant
+              if exists
+                then return $ Just potentialVariant
+                else return Nothing
+        return
+          VariantSearch
+          { searchDirectory = path searchPath
+          , fileName = fileToFind
+          , recursiveSearch = isRecursive
+          , linkToCreate = target
+          , result = searchResult
+          }
 
 -- Run the spec! Every target will be a symlink to the variant
 -- file
