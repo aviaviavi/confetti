@@ -29,9 +29,13 @@ groups:
 ```
 
 To switch to `work.credentials` simply run: 
-```$ confetti [required group_name] [optional variant_name]```
+```
+$ confetti [required group_name] [optional variant_name]
+```
 eg.
-```$ confetti aws work```
+```
+$ confetti aws work
+```
 
 This will symlink `~/.aws/credentials` -> `~/.aws/work.credentials`. If the target file is 
 _not_ a symlink when you invoke confetti, a backup will be made before your variant file is 
