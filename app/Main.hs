@@ -26,12 +26,12 @@ parseMainArgs a =
       confettiVersion =
         putStrLn ("confetti " ++ showVersion version) >> exitSuccess
   in case a of
-       ["-h"] -> showHelp
-       ["--help"] -> showHelp
-       ["-v"] -> confettiVersion
+       ["-h"]        -> showHelp
+       ["--help"]    -> showHelp
+       ["-v"]        -> confettiVersion
        ["--version"] -> confettiVersion
-       [g] -> return (MainArgs g Nothing)
-       _ -> printFail usage >> exitWith (ExitFailure 1)
+       [g]           -> return (MainArgs g Nothing)
+       _             -> printFail usage >> exitWith (ExitFailure 1)
 
 main :: IO ()
 main = do

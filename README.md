@@ -62,9 +62,8 @@ groups:
 This makes confetti a great tool for managing things like dotfiles, where the target config files
 are located in a github repo anywhere on the machine. Simply running:
 `confetti dotfiles` could link `~/.spacemacs` -> the first `.spacemacs` found in a recursive search of
-`~/dotfiles`. This results in a potential alternative to something like GNU Stow, provided that your use case
-is swapping out particular sets of files often.
-
+`~/dotfiles`. If your workflow involves regularly swapping any such files, the small amount of 
+initial configuration can be well worth the cost!
 
 ## Installing
 

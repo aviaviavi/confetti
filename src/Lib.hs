@@ -86,7 +86,8 @@ data ConfigGroup = ConfigGroup
   } deriving (Show, Generic)
 
 instance FromJSON ConfigGroup where
-  parseJSON (Object x) = ConfigGroup <$> x .: "name" <*> x .: "targets" <*> x .:? "search_paths"
+  parseJSON (Object x) =
+    ConfigGroup <$> x .: "name" <*> x .: "targets" <*> x .:? "search_paths"
   parseJSON _ = fail "Expected an object"
 
 -- A valid .confetti.yml gets parsed into this structure
@@ -129,15 +130,17 @@ parseGroup specFile groupName =
 validateSpec :: ConfigGroup -> Either (ParseError T.Text) ConfigGroup
 validateSpec groupSpec =
   let targetFileNames = map takeFileName $ targets groupSpec
-  in if length targetFileNames > length (nub targetFileNames)
+  in if length targetFileNames > length (uniq targetFileNames)
        then Left
               (DuplicateNameError $
-               T.pack . head $ targetFileNames \\ nub targetFileNames)
+               T.pack . head $ targetFileNames \\ uniq targetFileNames)
        else Right groupSpec
 
 -- Finds a given group in a parsed spec file. Returns a GroupNotFound if the group
 -- is missing
-findGroup :: ParsedSpecFile -> T.Text -> IO  (Either (ParseError T.Text) ConfigGroup)
+findGroup :: ParsedSpecFile
+          -> T.Text
+          -> IO (Either (ParseError T.Text) ConfigGroup)
 findGroup spec groupName =
   sequence $
   maybe (Left $ GroupNotFound groupName) (Right . expandPathsForGroup) $
@@ -199,7 +202,10 @@ makeVariant prefix target =
 
 -- Given a prefix, a list of targets, construct a list of variant filenames, and search
 -- for matches in all of the given search paths
-searchVariants :: ConfigVariantPrefix -> [ConfigTarget] -> [SearchPath] -> IO [VariantSearch]
+searchVariants :: ConfigVariantPrefix
+               -> [ConfigTarget]
+               -> [SearchPath]
+               -> IO [VariantSearch]
 searchVariants variant targetFiles vPaths =
   concat <$>
   mapM (\target -> mapM (findVariantInPath variant target) vPaths) targetFiles
@@ -235,7 +241,7 @@ findVariantInPath prefix target searchPath =
               VariantSearch
               { searchDirectory = path searchPath
               , fileName = fileToFind
-              , recursiveSearch = False
+              , recursiveSearch = True
               , result = searchResult
               , linkToCreate = target
               }
