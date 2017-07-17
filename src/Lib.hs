@@ -1,5 +1,5 @@
-{-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Lib where
 
@@ -75,7 +75,7 @@ data VariantSearch = VariantSearch
   , fileName        :: ConfigVariantFileName
   , recursiveSearch :: Bool
   , result          :: Maybe ConfigVariant -- populated when find the file we want to swap in
-  , linkToCreate :: ConfigTarget
+  , linkToCreate    :: ConfigTarget
   } deriving (Show, Generic)
 
 -- A set of configuration targets
@@ -127,10 +127,13 @@ parseGroup specFile groupName =
 -- Any custom validation we want to do on a config group we've successfully parsed
 -- goes here
 validateSpec :: ConfigGroup -> Either (ParseError T.Text) ConfigGroup
-validateSpec groupSpec = let targetFileNames = map takeFileName $ targets groupSpec in
-  if length targetFileNames > length (nub targetFileNames)
-  then Left (DuplicateNameError $ T.pack . head $ targetFileNames \\ nub targetFileNames)
-  else Right groupSpec
+validateSpec groupSpec =
+  let targetFileNames = map takeFileName $ targets groupSpec
+  in if length targetFileNames > length (nub targetFileNames)
+       then Left
+              (DuplicateNameError $
+               T.pack . head $ targetFileNames \\ nub targetFileNames)
+       else Right groupSpec
 
 -- Finds a given group in a parsed spec file. Returns a GroupNotFound if the group
 -- is missing
@@ -151,7 +154,10 @@ expandPathsForGroup confGroup =
 backUpIfNonSymLink :: FilePath -> IO ()
 backUpIfNonSymLink file = do
   exists <- doesFileExist file
-  isLink <- if exists then pathIsSymbolicLink file else return False
+  isLink <-
+    if exists
+      then pathIsSymbolicLink file
+      else return False
   when (exists && not isLink) $ createBackup file
 
 -- Backs up a file, eg config.json -> config.json.$time.backup
@@ -164,9 +170,10 @@ createBackup file =
 
 removeIfExists :: FilePath -> IO ()
 removeIfExists f = removeFile f `catch` handleExists
-  where handleExists e
-          | isDoesNotExistError e = return ()
-          | otherwise = throwIO e
+  where
+    handleExists e
+      | isDoesNotExistError e = return ()
+      | otherwise = throwIO e
 
 -- Given a list of variant configs, returns the variants that
 -- do not exist
@@ -183,32 +190,32 @@ linkTargets =
   mapM_
     (\pair -> createSymbolicLink (fromJust $ result pair) (linkToCreate pair))
 
--- Given a variant prefix, ie `dev`, and a target, ie `~/.aws/credentials`,
+-- Given a variant prefix, eg `dev`, and a target, eg `~/.aws/credentials`,
 -- construct the full path of the variant, `~/.aws/dev.credentials`
 makeVariant :: ConfigVariantPrefix -> ConfigTarget -> ConfigVariantFileName
-makeVariant prefix target = let p = maybe "" (++ ".") prefix in
-  p ++ takeFileName target
+makeVariant prefix target =
+  let p = maybe "" (++ ".") prefix
+  in p ++ takeFileName target
 
 -- Given a prefix, a list of targets, construct a list of variant filenames, and search
 -- for matches in all of the given search paths
 searchVariants :: ConfigVariantPrefix -> [ConfigTarget] -> [SearchPath] -> IO [VariantSearch]
 searchVariants variant targetFiles vPaths =
   concat <$>
-  mapM
-    (\target -> mapM (findVariantInPath variant target) vPaths)
-    targetFiles
+  mapM (\target -> mapM (findVariantInPath variant target) vPaths) targetFiles
 
 -- Get all the contents of a directory recursively
 getRecursiveContents :: FilePath -> IO [FilePath]
 getRecursiveContents topdir = do
   names <- getDirectoryContents topdir
   let properNames = filter (`notElem` [".", ".."]) names
-  paths <- forM properNames $ \n -> do
-    let nextPath = topdir </> n
-    isDir <- doesDirectoryExist nextPath
-    if isDir
-      then getRecursiveContents nextPath
-      else return [nextPath]
+  paths <-
+    forM properNames $ \n -> do
+      let nextPath = topdir </> n
+      isDir <- doesDirectoryExist nextPath
+      if isDir
+        then getRecursiveContents nextPath
+        else return [nextPath]
   return (concat paths)
 
 -- Perform a search for a single file, and return the search result
@@ -218,33 +225,34 @@ findVariantInPath :: ConfigVariantPrefix
                   -> IO VariantSearch
 findVariantInPath prefix target searchPath =
   let fileToFind = makeVariant prefix target
-  in do
-        pathName <- absolutePath $ path searchPath
+  in do pathName <- absolutePath $ path searchPath
         if fromMaybe False $ recursive searchPath
           then do
-            searchResult <- find (\f -> endswith fileToFind f && (target /= f)) <$> getRecursiveContents pathName
+            searchResult <-
+              find (\f -> endswith fileToFind f && (target /= f)) <$>
+              getRecursiveContents pathName
             return
-                      VariantSearch
-                      { searchDirectory = path searchPath
-                      , fileName = fileToFind
-                      , recursiveSearch = False
-                      , result = searchResult
-                      , linkToCreate = target
-                      }
+              VariantSearch
+              { searchDirectory = path searchPath
+              , fileName = fileToFind
+              , recursiveSearch = False
+              , result = searchResult
+              , linkToCreate = target
+              }
           else do
             let potentialVariant = pathName </> fileToFind
             exists <- doesFileExist potentialVariant
             return
-                      VariantSearch
-                      { searchDirectory = path searchPath
-                      , fileName = fileToFind
-                      , recursiveSearch = False
-                      , linkToCreate = target
-                      , result =
-                          if exists && potentialVariant /= target
-                            then Just potentialVariant
-                            else Nothing
-                      }
+              VariantSearch
+              { searchDirectory = path searchPath
+              , fileName = fileToFind
+              , recursiveSearch = False
+              , linkToCreate = target
+              , result =
+                  if exists && potentialVariant /= target
+                    then Just potentialVariant
+                    else Nothing
+              }
 
 
 -- Run the spec! Every target will be a symlink to the variant
@@ -264,7 +272,8 @@ applySpec spec = do
   mapM_ backUpIfNonSymLink groupTargets
   mapM_ removeIfExists groupTargets
   let confirmedVariantFiles = filter (isJust . result) searchResults
-      foundFiles = uniq $ map (takeFileName . fromJust . result) confirmedVariantFiles
+      foundFiles =
+        uniq $ map (takeFileName . fromJust . result) confirmedVariantFiles
       allFiles = uniq $ map fileName searchResults
       missingVariants = allFiles \\ foundFiles
   if null missingVariants

@@ -20,22 +20,27 @@ data MainArgs = MainArgs
 parseMainArgs :: [String] -> IO MainArgs
 parseMainArgs [g, v] = return (MainArgs g $ Just v)
 parseMainArgs a =
-  let usage = "Usage: `confetti [required group_name] [optional variant_prefix]`"
+  let usage =
+        "Usage: `confetti [required group_name] [optional variant_prefix]`"
       showHelp = (putStrLn usage >> exitSuccess)
-      confettiVersion = putStrLn ("confetti " ++ showVersion version) >> exitSuccess
+      confettiVersion =
+        putStrLn ("confetti " ++ showVersion version) >> exitSuccess
   in case a of
-       ["-h"]        -> showHelp
-       ["--help"]    -> showHelp
-       ["-v"]        -> confettiVersion
+       ["-h"] -> showHelp
+       ["--help"] -> showHelp
+       ["-v"] -> confettiVersion
        ["--version"] -> confettiVersion
-       [g]           -> return (MainArgs g Nothing)
-       _             -> printFail usage >> exitWith (ExitFailure 1)
+       [g] -> return (MainArgs g Nothing)
+       _ -> printFail usage >> exitWith (ExitFailure 1)
 
 main :: IO ()
 main = do
   args <- getArgs
   parsed <- parseMainArgs args
-  printf "Setting %s to %s\n" (groupName parsed) (showPrefix $ variantPrefix parsed)
+  printf
+    "Setting %s to %s\n"
+    (groupName parsed)
+    (showPrefix $ variantPrefix parsed)
   specPath <- absolutePath "~/.confetti.yml"
   group <- parseGroup specPath (T.pack $ groupName parsed)
   let validatedGroup = group >>= validateSpec

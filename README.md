@@ -62,7 +62,8 @@ groups:
 This makes confetti a great tool for managing things like dotfiles, where the target config files
 are located in a github repo anywhere on the machine. Simply running:
 `confetti dotfiles` could link `~/.spacemacs` -> the first `.spacemacs` found in a recursive search of
-`~/dotfiles`
+`~/dotfiles`. This results in a potential alternative to something like GNU Stow, provided that your use case
+is swapping out particular sets of files often.
 
 
 ## Installing
@@ -85,7 +86,7 @@ You can install from source with [stack](https://docs.haskellstack.org/en/stable
 
 ## Contributing
 
-Contributions are welcome! Please submit PR's or open up issues for discussion.
+Contributions in any form are welcome!
 
 ## Future Features
 
