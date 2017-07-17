@@ -29,14 +29,45 @@ groups:
 ```
 
 To switch to `work.credentials` simply run: 
-```$ confetti $group_name $variant_name```
+```
+$ confetti [required group_name] [optional variant_name]
+```
 eg.
-```$ confetti aws work```
+```
+$ confetti aws work
+```
 
 This will symlink `~/.aws/credentials` -> `~/.aws/work.credentials`. If the target file is 
 _not_ a symlink when you invoke confetti, a backup will be made before your variant file is 
 linked. If you have multiple target files in your group, they will all be symlinked to their
 respective variants.
+
+You can specify alternative `search_paths` for each `group`, and whether or not to search recursively.
+Adding a new group with this functionality could make our .confetti.yml look like:
+
+```
+groups:
+  - name: aws
+    targets:
+      - ~/.aws/credentials
+  - name: dotfiles
+    targets:
+      - ~/.spacemacs
+      - ~/.vimrc
+      - ~/.zshrc
+      - ~/.zpreztorc
+      - ~/.tmux.conf
+      - ~/.tmux.style.conf
+    search_paths:
+      - path: ~/dotfiles
+        recursive: true
+```
+
+This makes confetti a great tool for managing things like dotfiles, where the target config files
+are located in a github repo anywhere on the machine. Simply running:
+`confetti dotfiles` could link `~/.spacemacs` -> the first `.spacemacs` found in a recursive search of
+`~/dotfiles`. If your workflow involves regularly swapping any such files, the small amount of 
+initial configuration can be well worth the cost!
 
 ## Installing
 
@@ -58,7 +89,7 @@ You can install from source with [stack](https://docs.haskellstack.org/en/stable
 
 ## Contributing
 
-Contributions are welcome! Please submit PR's or open up issues for discussion.
+Contributions in any form are welcome!
 
 ## Future Features
 

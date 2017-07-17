@@ -1,5 +1,5 @@
 name:                confetti
-version:             0.0.1
+version:             0.0.2
 description:         A simple config file swapping tool
 
 license:             MIT
@@ -9,7 +9,6 @@ maintainer:          avipress@gmail.com
 homepage:            https://github.com/aviaviavi/confetti
 bug-reports:         https://github.com/aviaviavi/confetti/issues
 
-category:            Test
 build-type:          Simple
 stability:           alpha (experimental)
 cabal-version:       >=1.10
@@ -35,6 +34,7 @@ library
                    , MissingH
                    , time
                    , yaml
+                   , filepath
 
 executable confetti
   default-language:  Haskell2010
