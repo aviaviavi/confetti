@@ -274,6 +274,7 @@ searchVariants variant targetFiles vPaths =
 -- Get all the contents of a directory recursively
 getRecursiveContents :: FilePath -> IO [FilePath]
 getRecursiveContents topdir = do
+  putStrLn topdir
   names <- getDirectoryContents topdir
   let properNames = filter (`notElem` [".", ".."]) names
   paths <-
@@ -292,8 +293,8 @@ findVariantInPath :: ConfigVariantPrefix
                   -> IO VariantSearch
 findVariantInPath prefix target searchPath =
   let fileToFind = makeVariant prefix target
-  in do let pathName = path searchPath
-            isRecursive = fromMaybe False $ recursive searchPath
+  in do pathName <- absolutePath $ path searchPath
+        let isRecursive = fromMaybe False $ recursive searchPath
         searchResult <-
           if isRecursive
             then find (\f -> endswith fileToFind f && (target /= f)) <$>
