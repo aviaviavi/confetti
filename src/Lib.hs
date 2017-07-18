@@ -9,7 +9,6 @@ import           Control.Exception
 import           Control.Monad
 import           Data.List
 import           Data.List.Utils
-import Debug.Trace
 import           Data.Either.Utils
 import           Data.Maybe
 import           Data.Monoid
@@ -161,13 +160,12 @@ appendCommonGroup g common = do
   cTargets <- mapM absolutePath $ commonTargets common
   cSearchPaths <- defaultSearchPaths cTargets (commonSearchPaths common)
   adjustedGroupSearchPaths <- defaultSearchPaths (targets g) (searchPaths g)
-  let c =
-        ConfigGroup { name = name g
+  return
+    ConfigGroup
+    { name = name g
     , targets = uniq $ targets g ++ cTargets
     , searchPaths = Just . uniq $ adjustedGroupSearchPaths <> cSearchPaths
     }
-  print c
-  return c
 
 -- Expand all search paths. If search paths are empty, use the paths of the
 -- supplied targets
@@ -274,7 +272,6 @@ searchVariants variant targetFiles vPaths =
 -- Get all the contents of a directory recursively
 getRecursiveContents :: FilePath -> IO [FilePath]
 getRecursiveContents topdir = do
-  putStrLn topdir
   names <- getDirectoryContents topdir
   let properNames = filter (`notElem` [".", ".."]) names
   paths <-
