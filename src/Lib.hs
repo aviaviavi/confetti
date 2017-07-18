@@ -9,6 +9,7 @@ import           Control.Exception
 import           Control.Monad
 import           Data.List
 import           Data.List.Utils
+import Debug.Trace
 import           Data.Either.Utils
 import           Data.Maybe
 import           Data.Monoid
@@ -158,20 +159,32 @@ parseGroup specFile groupName =
 appendCommonGroup :: ConfigGroup -> CommonConfigGroup -> IO ConfigGroup
 appendCommonGroup g common = do
   cTargets <- mapM absolutePath $ commonTargets common
-  let maybeCommonSearchPaths = commonSearchPaths common
-  cSearchPaths <-
-    sequence $
-    mapM
-      (\s -> do
-         absolute <- absolutePath (path s)
-         return $ s {path = absolute}) <$>
-    maybeCommonSearchPaths
-  return
-    ConfigGroup
-    { name = name g
+  cSearchPaths <- defaultSearchPaths cTargets (commonSearchPaths common)
+  adjustedGroupSearchPaths <- defaultSearchPaths (targets g) (searchPaths g)
+  let c =
+        ConfigGroup { name = name g
     , targets = uniq $ targets g ++ cTargets
-    , searchPaths = uniq <$> searchPaths g <> cSearchPaths
+    , searchPaths = Just . uniq $ adjustedGroupSearchPaths <> cSearchPaths
     }
+  print c
+  return c
+
+-- Expand all search paths. If search paths are empty, use the paths of the
+-- supplied targets
+defaultSearchPaths :: [ConfigTarget] -> Maybe [SearchPath] -> IO [SearchPath]
+defaultSearchPaths ts ss =
+  let unadjusted =
+        fromMaybe
+           (map
+              (\t -> SearchPath {path = takeDirectory t, recursive = Just False})
+              ts)
+           ss
+  in
+  mapM
+    (\s -> do
+       absolute <- absolutePath (path s)
+       return $ s {path = absolute})
+    unadjusted
 
 -- Any custom validation we want to do on a config group we've successfully parsed
 -- goes here
@@ -279,8 +292,8 @@ findVariantInPath :: ConfigVariantPrefix
                   -> IO VariantSearch
 findVariantInPath prefix target searchPath =
   let fileToFind = makeVariant prefix target
-  in do pathName <- absolutePath $ path searchPath
-        let isRecursive = fromMaybe False $ recursive searchPath
+  in do let pathName = path searchPath
+            isRecursive = fromMaybe False $ recursive searchPath
         searchResult <-
           if isRecursive
             then find (\f -> endswith fileToFind f && (target /= f)) <$>
