@@ -1,5 +1,5 @@
 name:                confetti
-version:             0.0.2
+version:             0.3
 description:         A simple config file swapping tool
 
 license:             MIT

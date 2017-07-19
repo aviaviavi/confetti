@@ -1,5 +1,5 @@
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE OverloadedStrings     #-}
 
 module Lib where
 
@@ -7,7 +7,9 @@ import           Control.Exception
 import           Control.Monad
 import           Data.List
 import           Data.List.Utils
+import           Data.Either.Utils
 import           Data.Maybe
+import           Data.Monoid
 import           Data.Time.Clock.POSIX
 import           Data.Yaml
 import           GHC.Generics
@@ -16,6 +18,7 @@ import           System.FilePath.Posix
 import           System.IO.Error
 import           System.Posix.Files
 import           Text.Printf
+
 
 import qualified Data.Text             as T
 
@@ -67,7 +70,9 @@ type ConfigTarget = String
 data SearchPath = SearchPath
   { path      :: FilePath
   , recursive :: Maybe Bool
-  } deriving (Show, Generic)
+  } deriving (Show, Eq, Generic)
+
+instance FromJSON SearchPath
 
 -- Represents a search result for a given target, variant and directory
 data VariantSearch = VariantSearch
@@ -90,16 +95,26 @@ instance FromJSON ConfigGroup where
     ConfigGroup <$> x .: "name" <*> x .: "targets" <*> x .:? "search_paths"
   parseJSON _ = fail "Expected an object"
 
--- A valid .confetti.yml gets parsed into this structure
-newtype ParsedSpecFile = ParsedSpecFile
-  { groups :: [ConfigGroup]
+data CommonConfigGroup = CommonConfigGroup
+  { commonTargets     :: [FilePath]
+  , commonSearchPaths :: Maybe [SearchPath]
   } deriving (Show, Generic)
 
-instance ToJSON ConfigGroup
-instance ToJSON ParsedSpecFile
-instance ToJSON SearchPath
-instance FromJSON ParsedSpecFile
-instance FromJSON SearchPath
+instance FromJSON CommonConfigGroup where
+  parseJSON (Object x) =
+    CommonConfigGroup <$> x .: "targets" <*> x .:? "search_paths"
+  parseJSON _ = fail "Expected an object"
+
+-- A valid .confetti.yml gets parsed into this structure
+data ParsedSpecFile = ParsedSpecFile
+  { groups      :: [ConfigGroup]
+  , commonGroup :: Maybe CommonConfigGroup
+  } deriving (Show, Generic)
+
+instance FromJSON ParsedSpecFile where
+  parseJSON (Object x) =
+    ParsedSpecFile <$> x .: "groups" <*> x .:? "common"
+  parseJSON _ = fail "Expected an object"
 
 -- A full config specification:
 -- a group of files, and a variant to swap in for
@@ -110,7 +125,8 @@ data ConfigSpec = ConfigSpec
   }
 
 -- Given a yaml file and a group name, parse the group into a ConfigGroup, or
--- a ParseError
+-- a ParseError.
+-- If a `common` group is specified, that group will be combined with the parsed one
 parseGroup :: FilePath -> T.Text -> IO (Either (ParseError T.Text) ConfigGroup)
 parseGroup specFile groupName =
   doesFileExist specFile >>= \exists -> parseGroup' exists
@@ -118,12 +134,53 @@ parseGroup specFile groupName =
     parseGroup' exists
       | not exists = return $ Left ConfettiYamlNotFound
       | otherwise = do
-        eitherParsed <- decodeFileEither specFile
+        eitherSpec <- decodeFileEither specFile
+        eitherGroup <-
+          either
+            (return .
+             Left . ConfettiYamlInvalid . T.pack . prettyPrintParseException)
+            (`findGroup` groupName)
+            eitherSpec
         either
-          (return .
-           Left . ConfettiYamlInvalid . T.pack . prettyPrintParseException)
-          (`findGroup` groupName)
-          eitherParsed
+          (return . Left)
+          (\g ->
+             let spec = fromRight eitherSpec
+             in if isJust $ commonGroup spec
+                  then Right <$>
+                       appendCommonGroup g (fromJust $ commonGroup spec)
+                  else return $ Right g)
+          eitherGroup
+
+-- Combine whatever group we parsed with the common group, if one was
+-- specified
+appendCommonGroup :: ConfigGroup -> CommonConfigGroup -> IO ConfigGroup
+appendCommonGroup g common = do
+  cTargets <- mapM absolutePath $ commonTargets common
+  cSearchPaths <- defaultSearchPaths cTargets (commonSearchPaths common)
+  adjustedGroupSearchPaths <- defaultSearchPaths (targets g) (searchPaths g)
+  return
+    ConfigGroup
+    { name = name g
+    , targets = uniq $ targets g ++ cTargets
+    , searchPaths = Just . uniq $ adjustedGroupSearchPaths <> cSearchPaths
+    }
+
+-- Expand all search paths. If search paths are empty, use the paths of the
+-- supplied targets
+defaultSearchPaths :: [ConfigTarget] -> Maybe [SearchPath] -> IO [SearchPath]
+defaultSearchPaths ts ss =
+  let unadjusted =
+        fromMaybe
+           (map
+              (\t -> SearchPath {path = takeDirectory t, recursive = Just False})
+              ts)
+           ss
+  in
+  mapM
+    (\s -> do
+       absolute <- absolutePath (path s)
+       return $ s {path = absolute})
+    unadjusted
 
 -- Any custom validation we want to do on a config group we've successfully parsed
 -- goes here

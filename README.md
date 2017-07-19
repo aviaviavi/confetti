@@ -73,6 +73,21 @@ are located in a github repo anywhere on the machine. Simply running:
 `~/dotfiles`. If your workflow involves regularly swapping any such files, the small amount of 
 initial configuration can be well worth the cost!
 
+One last feature is that you can specify a top level `common` section that will 
+be applied to all other groups. For instance:
+
+```
+common:
+  targets:
+      - ~/dir/some.file
+  search_paths:
+    - path: ~/some/directory
+      recursive: false
+```
+
+Now, every group we try to use confetti for will also link `~/dir/some.file`, and
+will also use `/some/directory` as a search path.
+
 ## Installing
 
 ### MacOS
