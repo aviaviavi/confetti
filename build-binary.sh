@@ -2,7 +2,7 @@
 
 arch="$1"
 version=$(grep "^version" confetti.cabal | sed 's/ //g'  | cut -d ':' -f 2)
-file="confetti-$version-$arch.tar.gz"
+archive="confetti-$version-$arch.tar.gz"
 
 echo "Creating $archive"
 
