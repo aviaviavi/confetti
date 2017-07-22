@@ -102,9 +102,16 @@ $ brew install aviaviavi/homebrew-tap/confetti
 
 A linux binary can be found on the releases page.
 
-### Source (Cross Platform)
+### Source
 
 You can install from source with [stack](https://docs.haskellstack.org/en/stable/README/).
+
+### Windows
+
+Confetti does not currently work on Windows, as there is some reliance on POSIX
+for dealing with the file system. In theory it should be fairly straight-forward to
+get it working on Windows if anyone is up for implementing it. Feel encouraged to submit a PR
+or reach out for any related discussion.
 
 ## Contributing
 
