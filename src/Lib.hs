@@ -347,8 +347,8 @@ absolutePath p = do
 
 -- Prints green
 printSuccess :: String -> IO ()
-printSuccess s = putStrLn $ "\x1b[32m" ++  s
+printSuccess s = putStrLn $ "\x1b[32m" ++ s ++ "\x1B[0m"
 
 -- Prints red
 printFail :: String -> IO ()
-printFail s = putStrLn $ "\x1b[31m" ++  s
+printFail s = putStrLn $ "\x1b[31m" ++  s ++ "\x1B[0m"
