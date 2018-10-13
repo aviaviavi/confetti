@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE OverloadedStrings     #-}
 
-module Lib where
+module Confetti where
 
 import           Control.Exception
 import           Control.Monad

@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import           Data.Version       (showVersion)
-import           Lib
+import           Confetti
 import           Paths_confetti     (version)
 import           System.Environment
 import           System.Exit

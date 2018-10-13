@@ -2,7 +2,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.SmallCheck
 
-import Lib
+import Confetti
 
 main :: IO ()
 main = defaultMain $ testGroup "all-tests" tests
