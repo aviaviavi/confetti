@@ -45,6 +45,7 @@ executable confetti
   main-is:           Main.hs
   build-depends:     base >= 4.8 && < 5
                    , directory
+                   , cmdargs
                    , confetti
                    , text >= 1.2.2.1
   other-modules:

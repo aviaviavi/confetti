@@ -7,6 +7,6 @@ import Confetti
 main :: IO ()
 main = defaultMain $ testGroup "all-tests" tests
 
--- TODO: some tests would be good for future avi to write.
+-- TODO(|p=101|#lol) - some tests would be good for future avi to write.
 tests :: [TestTree]
 tests = []

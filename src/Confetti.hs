@@ -1,13 +1,15 @@
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE DeriveFoldable    #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Confetti where
 
+import           Control.Applicative
 import           Control.Exception
 import           Control.Monad
+import           Data.Either.Utils
 import           Data.List
 import           Data.List.Utils
-import           Data.Either.Utils
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Time.Clock.POSIX
@@ -41,9 +43,23 @@ instance (Show a) =>
       (show a)
 
 -- Errors from applying our config spec
-newtype ApplyError a = VariantsMissing [a]
+data ApplyError a = VariantsMissing [a] | VariantAlreadyExists [a] deriving (Foldable)
 instance (Show a) => Show (ApplyError a)  where
   show (VariantsMissing a) = "Couldn't find one or more of your variant files to use: " ++ show a
+  show (VariantAlreadyExists a) = printf "Target(s) %s already exists as a regular file. To backup and then symlink, use the -f flag when invoking confetti" $ show a
+
+appendVariantExists :: ApplyError a -> ApplyError a -> ApplyError a
+appendVariantExists (VariantAlreadyExists a) (VariantAlreadyExists b) =
+  VariantAlreadyExists $ a ++ b
+
+concatVariantExists :: [ApplyError a] -> ApplyError a
+concatVariantExists = foldr appendVariantExists (VariantAlreadyExists [])
+
+maybeApplyError :: ApplyError a -> Maybe (ApplyError a)
+maybeApplyError err = if null err then Nothing else Just err
+
+-- applyErrorToMaybe :: ApplyError a -> Maybe (ApplyError a)
+--   applyErrorToMaybe a = fmap listToMaybe
 
 -- A config file version we want to swap in or out
 type ConfigVariant = String
@@ -122,6 +138,7 @@ instance FromJSON ParsedSpecFile where
 data ConfigSpec = ConfigSpec
   { configGroup         :: ConfigGroup
   , configVariantPrefix :: ConfigVariantPrefix
+  , forceSymlink        :: Bool
   }
 
 -- Given a yaml file and a group name, parse the group into a ConfigGroup, or
@@ -211,14 +228,17 @@ expandPathsForGroup confGroup =
 
 -- If a target config file is _not_ a symlink,
 -- make a backup before we swap out the config
-backUpIfNonSymLink :: FilePath -> IO ()
-backUpIfNonSymLink file = do
+backUpIfNonSymLink :: Bool -> FilePath -> IO (Maybe (ApplyError FilePath))
+backUpIfNonSymLink shouldForce file = do
   exists <- doesFileExist file
   isLink <-
     if exists
       then pathIsSymbolicLink file
       else return False
-  when (exists && not isLink) $ createBackup file
+  if exists && not isLink then
+    if shouldForce then createBackup file >> return Nothing
+    else return . Just $ VariantAlreadyExists [file]
+  else return Nothing
 
 -- Backs up a file, eg config.json -> config.json.$time.backup
 createBackup :: FilePath -> IO ()
@@ -323,21 +343,24 @@ applySpec spec = do
             (\t -> SearchPath {path = takeDirectory t, recursive = Just False})
             groupTargets)
          (searchPaths $ configGroup spec))
-  mapM_ backUpIfNonSymLink groupTargets
-  mapM_ removeIfExists groupTargets
-  let confirmedVariantFiles = filter (isJust . result) searchResults
-      foundFiles =
-        uniq $ map (takeFileName . fromJust . result) confirmedVariantFiles
-      allFiles = uniq $ map fileName searchResults
-      missingVariants = allFiles \\ foundFiles
-  if null missingVariants
-    then do
-      mapM_
-        (\s -> printSuccess $ linkToCreate s ++ " -> " ++ fromJust (result s))
-        confirmedVariantFiles
-      linkTargets confirmedVariantFiles
-      return Nothing
-    else return $ Just (VariantsMissing missingVariants)
+  backupErr <- maybeApplyError . concatVariantExists . catMaybes <$> mapM (backUpIfNonSymLink (forceSymlink spec)) groupTargets
+  if isJust backupErr
+    then return backupErr
+    else do
+      mapM_ removeIfExists groupTargets
+      let confirmedVariantFiles = filter (isJust . result) searchResults
+          foundFiles =
+            uniq $ map (takeFileName . fromJust . result) confirmedVariantFiles
+          allFiles = uniq $ map fileName searchResults
+          missingVariants = allFiles \\ foundFiles
+      if null missingVariants
+        then do
+          mapM_
+            (\s -> printSuccess $ linkToCreate s ++ " -> " ++ fromJust (result s))
+            confirmedVariantFiles
+          linkTargets confirmedVariantFiles
+          return Nothing
+        else return $ Just (VariantsMissing missingVariants)
 
 -- Expands ~ to $HOME in a path
 absolutePath :: FilePath -> IO FilePath
