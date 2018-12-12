@@ -1,5 +1,5 @@
 name:                confetti
-version:             0.3.2
+version:             1.0.0
 synopsis:            A simple config file swapping tool
 category:            Command Line Tools
 description:         See the README on GitHub at <https://github.com/aviaviavi/confetti#readme>
