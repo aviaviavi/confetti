@@ -347,7 +347,6 @@ applySpec spec = do
   if isJust backupErr
     then return backupErr
     else do
-      mapM_ removeIfExists groupTargets
       let confirmedVariantFiles = filter (isJust . result) searchResults
           foundFiles =
             uniq $ map (takeFileName . fromJust . result) confirmedVariantFiles
@@ -355,6 +354,7 @@ applySpec spec = do
           missingVariants = allFiles \\ foundFiles
       if null missingVariants
         then do
+          mapM_ removeIfExists groupTargets
           mapM_
             (\s -> printSuccess $ linkToCreate s ++ " -> " ++ fromJust (result s))
             confirmedVariantFiles
