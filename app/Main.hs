@@ -25,7 +25,7 @@ argParser :: MainArgs
 argParser =
   MainArgs
   { group_name = def &= argPos 0 &= typ "GROUP_NAME"
-  , variant_prefix = def &= argPos 1 &= typ "VARIANT_PREFIX" &= opt (Nothing :: Maybe T.Text)
+  , variant_prefix = def &= argPos 1 &= typ "VARIANT_PREFIX" &= opt (Nothing :: Maybe String)
   , force = def &= help "If the target already exists as a regular file, back it up and then create a link"
   } &=
   summary ("confetti " ++ showVersion version) &=
@@ -36,17 +36,22 @@ argParser =
 confettiArgs :: IO MainArgs
 confettiArgs = cmdArgs argParser
 
+-- it seems to be a bug in cmdargs, we parse Just "Nothing" when nothing is supplied :/
+correctDefault (Just "Nothing") = Nothing
+correctDefault x                = x
+
 main :: IO ()
 main = do
   parsed <- confettiArgs
+  let variantPrefix = correctDefault $ variant_prefix parsed
   printf
     "Setting %s to %s\n"
     (group_name parsed)
-    (showPrefix $ variant_prefix parsed)
+    (showPrefix variantPrefix)
   specPath <- absolutePath "~/.confetti.yml"
   group <- parseGroup specPath (T.pack $ group_name parsed)
   let validatedGroup = group >>= validateSpec
-  either (printFail . show) (runSpec (variant_prefix parsed) (force parsed)) validatedGroup
+  either (printFail . show) (runSpec (variantPrefix) (force parsed)) validatedGroup
 
 -- Run our configuration spec. Prints whatever error message we get back,
 -- or a success message
