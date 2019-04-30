@@ -90,17 +90,16 @@ will also use `/some/directory` as a search path.
 
 ## Installing
 
-### MacOS
+### Linux/MacOS
 
-You can install with brew via:
+The easiest way to install `confetti` is with [Scarf](https://scarf.sh).
+
+```bash
+$ scarf install confetti
 ```
-$ brew tap aviaviavi/homebrew-tap
-$ brew install aviaviavi/homebrew-tap/confetti
-```
 
-### Linux 
+will be all you need!
 
-A linux binary can be found on the releases page.
 
 ### Source
 
