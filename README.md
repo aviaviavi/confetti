@@ -95,11 +95,11 @@ will also use `/some/directory` as a search path.
 The easiest way to install `confetti` is with [Scarf](https://scarf.sh).
 
 ```bash
-$ scarf install confetti
+# If you don't have scarf, you can easily install it with:
+$ curl -L https://scarf.sh/install | bash
+ 
+$ scarf install curl-runnings
 ```
-
-will be all you need!
-
 
 ### Source
 
