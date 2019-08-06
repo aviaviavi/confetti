@@ -98,7 +98,7 @@ The easiest way to install `confetti` is with [Scarf](https://scarf.sh).
 # If you don't have scarf, you can easily install it with:
 $ curl -L https://scarf.sh/install | bash
  
-$ scarf install curl-runnings
+$ scarf install confetti
 ```
 
 ### Source
