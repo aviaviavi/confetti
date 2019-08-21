@@ -339,7 +339,7 @@ applySpec spec = do
       (configVariantPrefix spec)
       groupTargets
       (fromMaybe
-         (map
+         (nub $ map
             (\t -> SearchPath {path = takeDirectory t, recursive = Just False})
             groupTargets)
          (searchPaths $ configGroup spec))
