@@ -275,7 +275,7 @@ linkTargets =
 makeVariant :: ConfigVariantPrefix -> ConfigTarget -> ConfigVariantFileName
 makeVariant prefix target =
   let p = maybe "" (++ ".") prefix
-  in p ++ takeFileName target
+   in T.unpack $ T.replace ".." "." (T.pack $  p ++ takeFileName target)
 
 -- Given a prefix, a list of targets, construct a list of variant filenames, and search
 -- for matches in all of the given search paths
